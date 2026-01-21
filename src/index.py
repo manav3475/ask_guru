@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import config
+from qdrant_client.http.models import Distance, SparseVectorParams, VectorParams
 from logger import logger
 from qdrant_client import QdrantClient, models
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
@@ -40,7 +41,8 @@ def embedding_and_indexing(client: QdrantClient,
                            chunk_overlap: int,
                            vector_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
                            vector_size: int = 384,
-                           sparse_embedding_model: str = "distilbert-base-uncased") -> None:
+                           sparse_embedding_model: str = "Qdrant/bm25") -> None:
+    # sourcery skip: use-named-expression
     '''Create a new collection. Read the PDF documents and create embeddings
     and store it in Qdrant vectorDB
     Args:
@@ -81,6 +83,38 @@ def embedding_and_indexing(client: QdrantClient,
 
     documents = text_splitter.split_documents(all_docs)
 
+    # Initialize embedding
+    # default embedding model: sentence-transformers/all-MiniLM-L6-v2
+    dense_embeddings = HuggingFaceEmbeddings(model_name=vector_embedding_model)
+    sparse_embeddings = FastEmbedSparse(model_name=sparse_embedding_model)
+
+     # Create a new collection with both Dense and Sparse vectors
+    client.create_collection(
+        collection_name=collection_name,
+        # vector size for sentence-transformers/all-MiniLM-L6-v2 is 384
+        vectors_config={"dense": VectorParams(
+            size=vector_size, distance=Distance.COSINE)},
+        sparse_vectors_config={
+            "sparse": SparseVectorParams(index=models.SparseIndexParams(on_disk=False))
+        },
+    )
+    logger.info(f"New collection is created: {collection_name}")
+ 
+    # Store the document in Vector Store
+    # Default indexing is HNSW
+    doc_store = QdrantVectorStore(
+        client=client,
+        collection_name=collection_name,
+        embedding=dense_embeddings,
+        sparse_embedding=sparse_embeddings,
+        retrieval_mode=RetrievalMode.HYBRID,
+        vector_name="dense",
+        sparse_vector_name="sparse"
+    )
+
+    doc_store.add_documents(documents)
+    logger.info("All the documents are stored in Qdrant vector db")
+    return None
 
 
 if __name__ == "__main__":

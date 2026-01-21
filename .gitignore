@@ -10,7 +10,7 @@ __pycache__
 *.csv
 temp*.ipynb
 .DS_Store
-
+.vscode
 data/*
 logs/*
 *.log
