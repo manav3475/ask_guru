@@ -8,7 +8,7 @@ from qdrant_client import QdrantClient
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import config
-from logger import logger
+from src.logger import logger
 
 def retrieve_documents(client: QdrantClient,
                        query: str,

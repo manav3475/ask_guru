@@ -4,7 +4,7 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_community.llms import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from logger import logger
+from src.logger import logger
 
 
 # Load once (IMPORTANT: do NOT load inside function repeatedly)
