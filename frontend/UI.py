@@ -1,9 +1,7 @@
 import gradio as gr
 import requests
 
-# FastAPI backend endpoint
 FASTAPI_URL = "http://127.0.0.1:8000/chat"
-
 
 def ask_guru(message, chat_history):
     if not message:
@@ -13,28 +11,33 @@ def ask_guru(message, chat_history):
         chat_history = []
 
     try:
+        
         response = requests.post(
-            FASTAPI_URL,
-            json={"query": message}
+                    FASTAPI_URL,
+                    json={"query": message},
+                    timeout=120
         )
+
         response.raise_for_status()
         answer = response.json().get("answer", "No answer from backend")
-
     except Exception as e:
         answer = f" Error: {e}"
 
-    # Append messages in Chatbot format
-    chat_history.append((message, answer))
+    chat_history.append(
+        {"role": "user", "content": message}
+    )
+    chat_history.append(
+        {"role": "assistant", "content": answer}
+    )
 
-    return chat_history, ""  # clear input box
+    return chat_history, ""
 
-
-with gr.Blocks(css="footer {visibility: hidden}") as demo:
+with gr.Blocks() as demo:
     gr.Markdown("## 💬 Ask Guru")
 
     chatbot = gr.Chatbot(
         height=500,
-        show_label=False
+        type="messages"   # 🔑 REQUIRED
     )
 
     msg = gr.Textbox(
@@ -44,16 +47,7 @@ with gr.Blocks(css="footer {visibility: hidden}") as demo:
 
     send_btn = gr.Button("Send")
 
-    send_btn.click(
-        ask_guru,
-        inputs=[msg, chatbot],
-        outputs=[chatbot, msg]
-    )
+    send_btn.click(ask_guru, [msg, chatbot], [chatbot, msg])
+    msg.submit(ask_guru, [msg, chatbot], [chatbot, msg])
 
-    msg.submit(
-        ask_guru,
-        inputs=[msg, chatbot],
-        outputs=[chatbot, msg]
-    )
-
-demo.launch()
+demo.launch(share=True)
