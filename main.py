@@ -1,39 +1,58 @@
-import os
-import sys
-import config
-
-from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
-from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
-from dotenv import load_dotenv
 
+import config
+from src.retrieval import retrieve_documents
+from src.generate import generate_answer
 
+app = FastAPI(title="Ask Guru", version="1.0")
 
-load_dotenv()
+# Qdrant client
+client = QdrantClient(
+    url=config.QDRANT_URL,
+    api_key=config.QDRANT_API_KEY,
+    timeout=120.0
+)
 
+# -------- Request / Response Models --------
 
-app = FastAPI(title="ASK GURU", version="1.0")
+class ChatRequest(BaseModel):
+    query: str
+    top_k: int = 5
+
+class ChatResponse(BaseModel):
+    answer: str
+
+# -------- Health Check --------
 
 @app.get("/")
-def root():
-    return {"message": "ASK GURU is up and running!"}
+def health():
+    return {"status": "OK"}
 
+# -------- Chat Endpoint --------
 
-@app.get("/chat")
-def root_endpoint():
-    return {"message": "This is chat endpoint"}
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    try:
+        # Retrieve documents
+        docs = retrieve_documents(
+            client=client,
+            query=request.query,
+            collection_name=config.COLLECTION_NAME,
+            k=request.top_k
+        )
 
+        if not docs:
+            raise HTTPException(status_code=404, detail="No documents found")
 
-# llm = HuggingFaceEndpoint(
-#     repo_id="meta-llama/Llama-3.1-8B-Instruct",
-#     task="text-generation",
-#     huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_ACCESS_TOKEN")
-# )
+        # Generate answer
+        answer = generate_answer(
+            query=request.query,
+            retrieved_docs=docs
+        )
 
-# model = ChatHuggingFace(llm=llm)
+        return ChatResponse(answer=answer)
 
-# result = model.invoke("Explain the theory of relativity in simple terms.")
-
-# print(result.content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
