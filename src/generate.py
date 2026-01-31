@@ -33,7 +33,7 @@ llm = HuggingFacePipeline(pipeline=text_generation_pipeline)
 def generate_answer(query: str, retrieved_docs):
     if not retrieved_docs:
         return "I could not find relevant information."
-        logger.warning("No documents retrieved for the query.")
+        logger.warning("No documents retrieved for the query.") 
 
     context = "\n\n".join(
         doc.page_content
@@ -46,18 +46,22 @@ def generate_answer(query: str, retrieved_docs):
         logger.warning("Retrieved documents contain no readable text.")
 
     prompt = f"""
-You are an AI assistant.
-Answer the question ONLY using the context below.
-If the answer is not present, say "I don't know".
+    You are an AI assistant.
 
-Context:
-{context}
+    Use the context below to answer the question.
+    If the answer is not fully present, answer as best as you can
+    based on the context. If the context is completely irrelevant,
+    say "I don't know".
 
-Question:
-{query}
+    Context:
+    {context}
 
-Answer:
-"""
+    Question:
+    {query}
+
+    Answer in clear, simple language:
+    """
+
     logger.debug(f"Generated prompt: {prompt}")
 
     return llm.invoke(prompt).strip()

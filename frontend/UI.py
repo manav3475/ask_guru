@@ -21,8 +21,9 @@ def ask_guru(message, chat_history):
     except Exception as e:
         answer = f"❌ Error: {e}"
 
-    # 👇 OLD Gradio-compatible format (tuple)
-    chat_history.append((message, answer))
+    # ✅ REQUIRED format for your Gradio version
+    chat_history.append({"role": "user", "content": message})
+    chat_history.append({"role": "assistant", "content": answer})
 
     return chat_history, ""
 
@@ -30,8 +31,13 @@ def ask_guru(message, chat_history):
 with gr.Blocks() as demo:
     gr.Markdown("## 💬 Ask Guru")
 
-    chatbot = gr.Chatbot(height=500)   # ❌ no `type` argument
-    msg = gr.Textbox(placeholder="Ask something from your documents...", lines=1)
+    # ✅ NO type argument
+    chatbot = gr.Chatbot(height=500)
+
+    msg = gr.Textbox(
+        placeholder="Ask something from your documents...",
+        lines=1
+    )
     send_btn = gr.Button("Send")
 
     send_btn.click(ask_guru, [msg, chatbot], [chatbot, msg])

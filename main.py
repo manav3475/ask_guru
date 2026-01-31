@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 
+import traceback
 import config
 from src.retrieval import retrieve_documents
 from src.generate import generate_answer
@@ -32,10 +33,41 @@ def health():
 
 # -------- Chat Endpoint --------
 
+# @app.post("/chat", response_model=ChatResponse)
+# async def chat(request: ChatRequest):
+#     try:
+#         # Retrieve documents
+#         docs = retrieve_documents(
+#             client=client,
+#             query=request.query,
+#             collection_name=config.COLLECTION_NAME,
+#             k=request.top_k
+#         )
+
+#         if not docs:
+#             raise HTTPException(status_code=404, detail="No documents found")
+
+#         # Generate answer
+#         answer = generate_answer(
+#             query=request.query,
+#             retrieved_docs=docs
+#         )
+
+#         return ChatResponse(answer=answer)
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     try:
-        # Retrieve documents
+        print("📩 Query:", request.query)
+
+        # ✅ ADD THIS HERE (early return)
+        if request.query.lower().strip() in ["hi", "hello", "hey"]:
+            return ChatResponse(answer="Hello! How can I help you today?")
+
         docs = retrieve_documents(
             client=client,
             query=request.query,
@@ -44,9 +76,8 @@ async def chat(request: ChatRequest):
         )
 
         if not docs:
-            raise HTTPException(status_code=404, detail="No documents found")
+            return ChatResponse(answer="❌ No relevant documents found.")
 
-        # Generate answer
         answer = generate_answer(
             query=request.query,
             retrieved_docs=docs
@@ -55,4 +86,9 @@ async def chat(request: ChatRequest):
         return ChatResponse(answer=answer)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print("🔥 CHAT ENDPOINT ERROR")
+        traceback.print_exc()
+
+        return ChatResponse(
+            answer="❌ Backend error. Check FastAPI logs."
+        )
