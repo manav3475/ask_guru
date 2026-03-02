@@ -230,4 +230,5 @@ Contributions are welcome! Please follow the existing code style and add tests f
 
 ## 📧 Contact
 
-[Add your contact information here]
+**Manav Shah**
+- Email: Manavshah712@gmail.com
