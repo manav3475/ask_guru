@@ -220,10 +220,6 @@ For complete list, see `pyproject.toml`
 - **Missing Dependencies**: Run `pip install -e .` again
 - **PDF Processing Errors**: Ensure PDFs are in `data/` directory and not corrupted
 
-## 📄 License
-
-[Add your license information here]
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow the existing code style and add tests for new features.
@@ -231,4 +227,4 @@ Contributions are welcome! Please follow the existing code style and add tests f
 ## 📧 Contact
 
 **Manav Shah**
-- Email: Manavshah712@gmail.com
+- Email: manavshah712@gmail.com
